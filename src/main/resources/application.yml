@@ -1,0 +1,7 @@
+quarkus:
+  datasource:
+    db-kind: mysql
+    jdbc:
+      url: jdbc:mysql://127.0.0.1:3306/sev_bank?useSSL=false&autoReconnect=true&serverTimezone=UTC
+    username: root
+    password: 123katze
