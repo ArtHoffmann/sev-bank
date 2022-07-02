@@ -11,64 +11,25 @@ import java.math.BigDecimal;
 public class KreditkartenDO {
 
     @Id
-    @Column(name = "kontonummer")
-    private Long kontonummer;
-    @Column(name = "girokontoId")
-    private Long girokontoId;
-    @Column(name = "name")
-    private String name;
-    @Column(name = "guthaben")
-    private BigDecimal guthaben;
-    @Column(name = "pin", length = 4)
-    private int pin;
-    @Column(name = "dispolimit")
-    private BigDecimal dispolimit;
+    @Column(name = "kreditkartennummer")
+    private Long kreditkartennummer;
 
-    public Long getKontonummer() {
-        return kontonummer;
+    @Column(name = "kreditlimit")
+    private BigDecimal kreditlimit;
+
+    public Long getKreditkartennummer() {
+        return kreditkartennummer;
     }
 
-    public void setKontonummer(Long kontonummer) {
-        this.kontonummer = kontonummer;
+    public void setKreditkartennummer(Long kreditkartennummer) {
+        this.kreditkartennummer = kreditkartennummer;
     }
 
-    public Long getGirokontoId() {
-        return girokontoId;
+    public BigDecimal getKreditlimit() {
+        return kreditlimit;
     }
 
-    public void setGirokontoId(Long girokontoId) {
-        this.girokontoId = girokontoId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public BigDecimal getGuthaben() {
-        return guthaben;
-    }
-
-    public void setGuthaben(BigDecimal guthaben) {
-        this.guthaben = guthaben;
-    }
-
-    public int getPin() {
-        return pin;
-    }
-
-    public void setPin(int pin) {
-        this.pin = pin;
-    }
-
-    public BigDecimal getDispolimit() {
-        return dispolimit;
-    }
-
-    public void setDispolimit(BigDecimal dispolimit) {
-        this.dispolimit = dispolimit;
+    public void setKreditlimit(BigDecimal kreditlimit) {
+        this.kreditlimit = kreditlimit;
     }
 }
