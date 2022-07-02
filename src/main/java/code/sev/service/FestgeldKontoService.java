@@ -1,34 +1,47 @@
 package code.sev.service;
 
+import code.sev.model.DepositDO;
 import code.sev.model.FestgeldkontoDO;
-import code.sev.model.KreditkartenDO;
 import code.sev.repository.FestgeldkontoRepository;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class FestgeldKontoService {
 
     private FestgeldkontoRepository festgeldkontoRepository;
+    private DepositService depositService;
 
-    public FestgeldKontoService(FestgeldkontoRepository festgeldkontoRepository) {
+    public FestgeldKontoService(FestgeldkontoRepository festgeldkontoRepository, DepositService depositService) {
         this.festgeldkontoRepository = festgeldkontoRepository;
+        this.depositService = depositService;
     }
 
-    private FestgeldkontoDO addFestgeldkonto(FestgeldkontoDO festgeldkontoDO) {
+    public FestgeldkontoDO addFestgeldkonto(FestgeldkontoDO festgeldkontoDO) {
         return festgeldkontoRepository.save(festgeldkontoDO);
     }
 
-    private void deleteFestgeldkontoById(FestgeldkontoDO konto) {
-        festgeldkontoRepository.delete(konto);
+    public FestgeldkontoDO updateFestgeldkonto(FestgeldkontoDO festgeldkontoDO) {
+        return festgeldkontoRepository.save(festgeldkontoDO);
     }
 
-    private FestgeldkontoDO findFestgeldkontoById(Long id) {
+    public void deleteFestgeldkontoById(Long kdnr) {
+        FestgeldkontoDO byId = festgeldkontoRepository.findById(kdnr).orElseThrow(IllegalArgumentException::new);
+        List<DepositDO> deposits = depositService.deposits(kdnr);
+        if (!deposits.isEmpty()) {
+            throw new IllegalArgumentException("Das Festgeldkonto beinhaltet noch deposits " + deposits.size());
+        }
+        festgeldkontoRepository.delete(byId);
+    }
+
+    public FestgeldkontoDO findFestgeldkontoById(Long id) {
         Optional<FestgeldkontoDO> first = festgeldkontoRepository.findById(id).stream().findFirst();
         if (first.isPresent()) {
             return first.get();
@@ -36,13 +49,13 @@ public class FestgeldKontoService {
         throw new IllegalArgumentException("Festgeldkonto mit der ID " + id + " konne nicht gefunden werden");
     }
 
-    private List<FestgeldkontoDO> findAll() {
+    public List<FestgeldkontoDO> findAll() {
         List<FestgeldkontoDO> liste = new ArrayList<>();
         festgeldkontoRepository.findAll().forEach(liste::add);
         return liste;
     }
 
-    private boolean withdrawMoney(BigDecimal amount, Long id, int pin) {
+    public boolean withdrawMoney(BigDecimal amount, Long id, int pin) throws Exception {
 
         if (amount.doubleValue() < 0) {
             throw new IllegalArgumentException("Beträge <= 0 können  nicht abgehoben werden");
@@ -53,37 +66,82 @@ public class FestgeldKontoService {
                 .filter(konto -> konto.getPin() == pin)
                 .filter(konto -> Objects.equals(konto.getKontonummer(), id)).findFirst();
 
-        if (festgeldkonto.isPresent()) {
-            FestgeldkontoDO konto = festgeldkonto.get();
-            BigDecimal guthaben = konto.getGuthaben();
-            BigDecimal subtract = guthaben.subtract(amount);
-            if (subtract.doubleValue() < 0) {
-                throw new IllegalArgumentException("Konto ist nicht genügend gedeckt");
-            } else {
-                konto.setGuthaben(subtract);
-                // TODO: Obj. noch persisten
-                return true;
-            }
-        }
+        Optional<DepositDO> auszahlbahrerBetrag = checkDeposits(id);
 
+        if (festgeldkonto.isPresent() && auszahlbahrerBetrag.isPresent()) {
+
+            FestgeldkontoDO konto = festgeldkonto.get();
+            DepositDO depositDO = auszahlbahrerBetrag.get();
+            BigDecimal auszahlbarerBetrag = depositDO.getBetrag();
+            BigDecimal subtract = auszahlbarerBetrag.subtract(amount);
+
+            if (subtract.doubleValue() < 0) {
+                throw new IllegalArgumentException("Es kann nicht mehr Geld abgehoben werden als auf dem Festgeldkonto ist!");
+            }
+
+            konto.setGuthaben(subtract);
+            depositDO.setBetrag(subtract);
+            updateFestgeldkonto(konto);
+            depositService.editDeposit(depositDO);
+            return true;
+        }
         return false;
     }
 
+    private Optional<DepositDO> checkDeposits(Long id) {
+        List<DepositDO> aktivDeposits = depositService.deposits(id);
 
-    private FestgeldkontoDO depositMoney(BigDecimal amount, Long id, int pin) {
+        List<DepositDO> auszahlbareBetraege = aktivDeposits.stream()
+                .filter(x -> x.getDepositDate().plusMonths(1).isBefore(x.getWithdrawelDate()))
+                .collect(Collectors.toList());
+
+        Optional<DepositDO> auszahlbahrerBetrag;
+        if (auszahlbareBetraege.size() > 1) {
+            auszahlbahrerBetrag = checkAuszahlbarebetraege(auszahlbareBetraege);
+        } else {
+            auszahlbahrerBetrag = auszahlbareBetraege.stream().findFirst();
+        }
+        return auszahlbahrerBetrag;
+    }
+
+    private Optional<DepositDO> checkAuszahlbarebetraege(List<DepositDO> auszahlbareBetraege) {
+        DepositDO newDeposit = new DepositDO();
+        LocalDate depositDate = null;
+        LocalDate withdrawel = null;
+        double sum = 0;
+        for (DepositDO depositDO : auszahlbareBetraege) {
+            depositDate = depositDO.getDepositDate();
+            withdrawel = depositDO.getWithdrawelDate();
+            sum += depositDO.getBetrag().doubleValue();
+        }
+        newDeposit.setType("FESTGELDKONTO");
+        newDeposit.setDepositDate(depositDate);
+        newDeposit.setWithdrawelDate(withdrawel);
+        newDeposit.setBetrag(BigDecimal.valueOf(sum));
+        return Optional.of(newDeposit);
+    }
+
+
+    public FestgeldkontoDO depositMoney(BigDecimal amount, Long id, int pin) {
         Optional<FestgeldkontoDO> first = findAll()
                 .stream()
                 .filter(konto -> konto.getPin() == pin)
-                .filter(konto -> Objects.equals(konto.getKontonummer(), id)).findFirst();
+                .filter(konto -> konto.getKontonummer().equals(id)).findFirst();
 
-        if (first.isPresent() && amount.compareTo(BigDecimal.ZERO) != 0) {
+
+        if (first.isPresent() && amount.doubleValue() > 0) {
             FestgeldkontoDO festgeldkontoDO = first.get();
-            festgeldkontoDO.setGuthaben(amount);
+            BigDecimal guthaben = festgeldkontoDO.getGuthaben();
+            BigDecimal neuesguthaben = guthaben.add(amount);
+            festgeldkontoDO.setGuthaben(neuesguthaben);
+            depositService.deposit(amount, festgeldkontoDO.getKontonummer(), "FESTGELDKONTO");
+            updateFestgeldkonto(festgeldkontoDO);
+            return festgeldkontoDO;
         }
         throw new IllegalArgumentException("Einzahlung nicht möglich");
     }
 
-    private FestgeldkontoDO setDispoLimit(Long id, BigDecimal limit, int pin) {
+    public FestgeldkontoDO setDispoLimit(Long id, BigDecimal limit, int pin) {
         Optional<FestgeldkontoDO> first = findAll()
                 .stream()
                 .filter(konto -> konto.getPin() == pin)
@@ -92,6 +150,26 @@ public class FestgeldKontoService {
         if (first.isPresent()) {
             FestgeldkontoDO festgeldkontoDO = first.get();
             festgeldkontoDO.setDispolimit(limit);
+            updateFestgeldkonto(festgeldkontoDO);
+            return festgeldkontoDO;
+        }
+        throw new IllegalArgumentException("Limit konnte nicht gesetzt werden");
+    }
+
+    public boolean changePing(Long id, int newPin, int oldPin) {
+        Optional<FestgeldkontoDO> first = findAll()
+                .stream()
+                .filter(konto -> konto.getPin() == oldPin)
+                .filter(konto -> Objects.equals(konto.getKontonummer(), id)).findFirst();
+        if (newPin == oldPin) {
+            throw new IllegalArgumentException("Der neue Pin stimmt mit dem alten Pin überein");
+        }
+
+        if (first.isPresent()) {
+            FestgeldkontoDO festgeldkontoDO = first.get();
+            festgeldkontoDO.setPin(newPin);
+            updateFestgeldkonto(festgeldkontoDO);
+            return true;
         }
         throw new IllegalArgumentException("Limit konnte nicht gesetzt werden");
     }

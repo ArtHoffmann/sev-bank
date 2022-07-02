@@ -1,9 +1,11 @@
 package code.sev.model;
 
+import net.bytebuddy.asm.Advice;
 import org.hibernate.internal.util.MathHelper;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Random;
 import java.util.UUID;
 
@@ -18,25 +20,34 @@ public class FestgeldkontoDO {
     private String name;
     @Column(name = "guthaben")
     private BigDecimal guthaben;
-    @Column(name = "guthaben_edit")
-    private boolean guthaben_edit;
     @Column(name = "pin", length = 4)
     private int pin;
     @Column(name = "dispolimit")
     private BigDecimal dispolimit;
     @Column(name = "zins", nullable = false)
     private BigDecimal zins;
+    @Column(name = "openingDate", nullable = false)
+    private LocalDate openingDate;
 
     @PrePersist
     public void prePersist() {
         generateKontonummer();
+        generateRandomPin();
         this.guthaben = BigDecimal.ZERO;
+        this.openingDate = LocalDate.now();
     }
 
     private void generateKontonummer() {
         Random rnd = new Random();
         int number = rnd.nextInt(999999999);
-        setKontonummer(Long.valueOf(number));
+        setKontonummer((long) number);
+    }
+
+    private void generateRandomPin() {
+        int min = 9999;
+        int max = 1000;
+        int number = (int) (Math.random() * (max - min) + min);
+        setPin(number);
     }
 
     public Long getKontonummer() {
@@ -87,11 +98,11 @@ public class FestgeldkontoDO {
         this.zins = zins;
     }
 
-    public boolean isGuthaben_edit() {
-        return guthaben_edit;
+    public LocalDate getOpeningDate() {
+        return openingDate;
     }
 
-    public void setGuthaben_edit(boolean guthaben_edit) {
-        this.guthaben_edit = guthaben_edit;
+    public void setOpeningDate(LocalDate openingDate) {
+        this.openingDate = openingDate;
     }
 }

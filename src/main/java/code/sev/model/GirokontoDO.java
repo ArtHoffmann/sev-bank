@@ -1,13 +1,12 @@
 package code.sev.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Random;
 
 @Entity
-@Table(name = "Girokonto")
+@Table(name = "girokonto")
 public class GirokontoDO {
 
     @Id
@@ -21,6 +20,29 @@ public class GirokontoDO {
     private int pin;
     @Column(name = "dispolimit")
     private BigDecimal dispolimit;
+    @Column(name = "openingDate", nullable = false)
+    private LocalDate openingDate;
+
+    @PrePersist
+    public void prePersist() {
+        generateKontonummer();
+        generateRandomPin();
+        this.guthaben = BigDecimal.ZERO;
+        this.openingDate = LocalDate.now();
+    }
+
+    private void generateKontonummer() {
+        Random rnd = new Random();
+        int number = rnd.nextInt(999999999);
+        setKontonummer((long) number);
+    }
+
+    private void generateRandomPin() {
+        int min = 9999;
+        int max = 1000;
+        int number = (int) (Math.random() * (max - min) + min);
+        setPin(number);
+    }
 
     public Long getKontonummer() {
         return kontonummer;
@@ -62,5 +84,11 @@ public class GirokontoDO {
         this.dispolimit = dispolimit;
     }
 
+    public LocalDate getOpeningDate() {
+        return openingDate;
+    }
 
+    public void setOpeningDate(LocalDate openingDate) {
+        this.openingDate = openingDate;
+    }
 }
