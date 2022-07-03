@@ -28,7 +28,6 @@ public class GirokontoService {
     public GirokontoDO addGirokonto(GirokontoDO girokontoDO) {
         GirokontoDO giroKonto = girokontoRepository.save(girokontoDO);
         gkKKService.addGkKKEintrag(giroKonto.getKontonummer());
-
         return giroKonto;
     }
 

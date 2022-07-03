@@ -27,7 +27,9 @@ public class GirokontoDO {
     public void prePersist() {
         generateKontonummer();
         generateRandomPin();
-        this.guthaben = BigDecimal.ZERO;
+        if(guthaben.doubleValue() == 0.0){
+            this.guthaben = BigDecimal.ZERO;
+        }
         this.openingDate = LocalDate.now();
     }
 

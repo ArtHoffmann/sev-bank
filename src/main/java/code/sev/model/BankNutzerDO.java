@@ -2,6 +2,7 @@ package code.sev.model;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.Random;
 import java.util.UUID;
 
 @Table(name = "SEV_NUTZER")
@@ -22,8 +23,10 @@ public class BankNutzerDO {
 
     @PrePersist
     public void prePersist() {
-        nutzerKey.setKundennummer(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
+        Random rnd = new Random();
+        nutzerKey.setKundennummer((long) rnd.nextInt(999999999));
     }
+
 
     public String getVorname() {
         return vorname;
