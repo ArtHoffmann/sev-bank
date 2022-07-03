@@ -8,6 +8,8 @@ import code.sev.repository.KreditkartenRepository;
 import javax.enterprise.context.ApplicationScoped;
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @ApplicationScoped
 public class Girokonto_KreditkartenService {
@@ -19,6 +21,12 @@ public class Girokonto_KreditkartenService {
     public Girokonto_KreditkartenService(Girokonto_KreditkartenRepository girokonto_kreditkartenRepository, KreditkartenRepository kreditkartenRepository) {
         this.girokonto_kreditkartenRepository = girokonto_kreditkartenRepository;
         this.kreditkartenRepository = kreditkartenRepository;
+    }
+
+    public List<GirokontoKreditkarteDO> findAll() {
+        List<GirokontoKreditkarteDO> liste = new ArrayList<>();
+        girokonto_kreditkartenRepository.findAll().forEach(liste::add);
+        return liste;
     }
 
     @Transactional

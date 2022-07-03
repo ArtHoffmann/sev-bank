@@ -4,6 +4,7 @@ import code.sev.service.KreditkartenService;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.math.BigDecimal;
 
 @Path("kreditkarte")
 public class KreditkartenRessource {
@@ -23,6 +24,12 @@ public class KreditkartenRessource {
     @Path("{id}")
     public Response findNutzerById(@PathParam("id") Long id) throws Exception {
         return Response.status(Response.Status.OK).entity(kreditkartenService.findKreditkarteById(id)).build();
+    }
+
+    @GET
+    @Path("withdraw/{id}/{amount}")
+    public Response withdrawKK(@PathParam("id") Long id, @PathParam("amount") BigDecimal amount) throws Exception {
+        return Response.status(Response.Status.OK).entity(kreditkartenService.withdrawMoney(id, amount)).build();
     }
 
 
