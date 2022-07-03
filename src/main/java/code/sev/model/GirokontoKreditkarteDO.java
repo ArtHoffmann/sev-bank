@@ -1,17 +1,15 @@
 package code.sev.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "girokonto_kreditkarte")
-public class Girokonto_kreditkarteDO {
+public class GirokontoKreditkarteDO {
 
     @Id
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "girokontoId")
     private BigDecimal girokontoId;

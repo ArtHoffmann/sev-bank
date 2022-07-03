@@ -1,35 +1,35 @@
 package code.sev.service;
 
 import code.sev.model.DepositDO;
-import code.sev.model.FestgeldkontoDO;
 import code.sev.model.GirokontoDO;
 import code.sev.repository.GirokontoRepository;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.naming.NamingEnumeration;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @ApplicationScoped
 public class GirokontoService {
 
     private GirokontoRepository girokontoRepository;
     private DepositService depositService;
+    private Girokonto_KreditkartenService gkKKService;
 
-    public GirokontoService(GirokontoRepository girokontoRepository, DepositService depositService) {
+    public GirokontoService(GirokontoRepository girokontoRepository, DepositService depositService, Girokonto_KreditkartenService gkKKService) {
         this.girokontoRepository = girokontoRepository;
         this.depositService = depositService;
+        this.gkKKService = gkKKService;
     }
 
 
     public GirokontoDO addGirokonto(GirokontoDO girokontoDO) {
-        return girokontoRepository.save(girokontoDO);
+        GirokontoDO giroKonto = girokontoRepository.save(girokontoDO);
+        gkKKService.addGkKKEintrag(giroKonto.getKontonummer());
+
+        return giroKonto;
     }
 
     public GirokontoDO updateGirokonto(GirokontoDO festgeldkontoDO) {
@@ -77,8 +77,8 @@ public class GirokontoService {
             BigDecimal subtract = auszahlbarerBetrag.subtract(amount);
             BigDecimal subtractDispo = new BigDecimal(0);
             // maximaler auszahlbetrag
-            if(subtract.doubleValue() < 0) {
-                 subtractDispo = subtract.add(konto.getDispolimit());
+            if (subtract.doubleValue() < 0) {
+                subtractDispo = subtract.add(konto.getDispolimit());
             }
 
             if (subtractDispo.doubleValue() < 0) {
