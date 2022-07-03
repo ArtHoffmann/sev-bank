@@ -20,7 +20,7 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-@Tag("girokonto")
+@Tag("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GirokontoRessourceTest {
 
