@@ -25,13 +25,13 @@ public class GirokontoRessource {
     @GET
     @Path("{id}")
     public Response findGiroKontoById(@PathParam("id") Long id) {
-        return Response.status(Response.Status.OK).entity(girokontoService.findFestgeldkontoById(id)).build();
+        return Response.status(Response.Status.OK).entity(girokontoService.findGirokontoById(id)).build();
     }
 
     @DELETE
     @Path("{kundennummer}")
     public Response deleteGiroKontoById(@PathParam("kundennummer") Long kundennummer) {
-        girokontoService.deleteFestgeldkontoById(kundennummer);
+        girokontoService.findGirokontoById(kundennummer);
         return Response.status(Response.Status.OK).entity("DELETED").build();
     }
 

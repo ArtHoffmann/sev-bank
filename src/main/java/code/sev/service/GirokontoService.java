@@ -36,7 +36,7 @@ public class GirokontoService {
         return girokontoRepository.save(festgeldkontoDO);
     }
 
-    public void deleteFestgeldkontoById(Long kdnr) {
+    public void deleteGirokontoById(Long kdnr) {
         GirokontoDO byId = girokontoRepository.findById(kdnr).orElseThrow(IllegalArgumentException::new);
         List<DepositDO> deposits = depositService.deposits(kdnr);
         if (!deposits.isEmpty()) {
@@ -45,7 +45,7 @@ public class GirokontoService {
         girokontoRepository.delete(byId);
     }
 
-    public GirokontoDO findFestgeldkontoById(Long id) {
+    public GirokontoDO findGirokontoById(Long id) {
         Optional<GirokontoDO> first = girokontoRepository.findById(id).stream().findFirst();
         if (first.isPresent()) {
             return first.get();
@@ -111,6 +111,7 @@ public class GirokontoService {
         }
         throw new IllegalArgumentException("Einzahlung nicht möglich");
     }
+
 
     public GirokontoDO setDispoLimit(Long id, BigDecimal limit, int pin) {
         Optional<GirokontoDO> first = findAll()
